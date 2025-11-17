@@ -24,10 +24,10 @@ Projects
 
 Here are the step-by-step reports on the major services I've deployed and the problems I've solved.
 
-    01 - Virtualized pfSense Firewall
+    [01 - Virtualized pfSense Firewall](./01-pfSense-Firewall/)
 
         Description: Deployed an enterprise-grade pfSense firewall as a virtual machine, replacing my consumer ISP router. This project involved PCI passthrough, solving a "Double NAT" IP conflict, and troubleshooting a VM performance bottleneck to achieve full gigabit speeds.
 
-    02 - Enterprise Wi-Fi Deployment
+    [02 - Enterprise Wi-Fi Deployment](./02-Omada-Controller)
 
         Description: Deployed a TP-Link Omada (EAP245) enterprise access point. This project involved setting up a lightweight Ubuntu container to run the Omada Software Controller, troubleshooting "stuck" package dependencies in Linux, and using a factory reset to solve a "failed adoption" state.
