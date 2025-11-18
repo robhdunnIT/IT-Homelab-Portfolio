@@ -30,5 +30,5 @@ Here are the step-by-step reports on the major services I've deployed and the pr
 
 * **[01 - Virtualized pfSense Firewall](./01-pfSense-Firewall/README.md)**
 * **[02 - Enterprise Wi-Fi Deployment](./02-Omada-Controller/README.md)**
-* **[03 - Active Directory Lab](./03-Active-Directory/README.md)** *(Coming Soon)*
+* **[03 - Active Directory Domain Lab](./03-Active-Directory-Lab/README.md)**
 * **[04 - Secure VPN Services](./04-VPN-Services/README.md)** *(Coming Soon)*
