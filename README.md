@@ -33,3 +33,4 @@ Here are the step-by-step reports on the major services I've deployed and the pr
 * **[03 - Active Directory Domain Lab](./03-Active-Directory-Lab/README.md)**
 * **[04 - Secure VPN Services](./04-VPN-Services/README.md)** *(Coming Soon)*
 *  **[05 - Guest Network Isolation](./05-Guest-Network-Isolation/README.md)**
+* **[06 - Centralized DNS & Ad-Blocking](./06-Pi-hole-DNS/README.md)**
