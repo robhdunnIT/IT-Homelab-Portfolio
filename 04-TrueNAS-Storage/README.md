@@ -27,4 +27,4 @@ This project required advanced virtualization techniques, specifically **PCIe/Di
 ls -l /dev/disk/by-id/
 
 # Mapping the physical 8TB drive to the VM (SCSI Controller 2)
-qm set 101 -scsi2 /dev/disk/by-id/ata-ST8000DM004-2CX188_ZCT2M080
+qm set 110 -scsi2 /dev/disk/by-id/ata-ST8000DM004-2CX188_ZCT2M080
