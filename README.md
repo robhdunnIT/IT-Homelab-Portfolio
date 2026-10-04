@@ -4,6 +4,8 @@ I'm an IT support professional, and this is my hands-on lab: a single Proxmox se
 
 **Focus areas:** systems administration · networking & firewalls · Windows / Active Directory · virtualization · troubleshooting
 
+**Connect:** [LinkedIn](https://www.linkedin.com/in/roberthdunn/)
+
 ---
 
 ## Projects
