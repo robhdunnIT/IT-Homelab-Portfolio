@@ -1,6 +1,6 @@
 # IT Homelab Portfolio
 
-Hands-on infrastructure I built, broke, and fixed on a single Proxmox server: a virtualized firewall, segmented networks, Active Directory, network storage, and centralized DNS. Each project write-up covers what I built, what went wrong, how I diagnosed it, and how I fixed it.
+I'm an IT support professional, and this is my hands-on lab: a single Proxmox server running a virtualized firewall, segmented networks, Active Directory, network storage, and centralized DNS. Each project write-up covers what I built, what went wrong, how I diagnosed it, and how I fixed it.
 
 **Focus areas:** systems administration · networking & firewalls · Windows / Active Directory · virtualization · troubleshooting
 
