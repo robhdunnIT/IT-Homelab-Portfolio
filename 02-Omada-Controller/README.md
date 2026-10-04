@@ -1,30 +1,43 @@
-# Project: Enterprise Wi-Fi Deployment (Omada)
+# 02: Enterprise Wi-Fi with Omada
 
-**Goal:** To deploy a controller-managed, PoE-powered enterprise access point to provide secure, high-performance Wi-Fi for my lab.
+[← Previous: pfSense](../01-pfSense-Firewall/README.md) · [Back to portfolio](../README.md) · [Next: Active Directory →](../03-Active-Directory-Lab/README.md)
 
-**Core Technologies:** Proxmox VE, LXC (Linux Containers), TP-Link Omada, PoE, VLANs, 802.1q.
+> **Summary:** Deployed a controller-managed, PoE-powered enterprise access point, with the management controller running in a lightweight Linux container on Proxmox.
 
----
-
-### Process & Deployment
-
-1.  **Controller:** Deployed the Omada Software Controller inside a lightweight **Ubuntu LXC container** on Proxmox, giving it a static IP (`10.0.0.3`) for 24/7 management.
-2.  **Hardware:** Installed an **Omada EAP245** access point, powered by my `TP-SG1016PE` PoE switch.
+**Technologies:** Proxmox VE · LXC · Ubuntu · TP-Link Omada · PoE · VLANs (802.1Q)
 
 ---
 
-### Challenges & Solutions
+## Build
 
-* **Challenge 1: Failed Installation**
-    * **Problem:** Manually installing the controller software on Ubuntu 22.04 failed due to complex, broken package dependencies (`mongodb`, `libssl1.1`).
-    * **Solution:** I researched the issue and found a community-made "Easy Install Script." This script automated the entire installation, correctly added the necessary repositories, and installed all dependencies, solving the problem in a clean and repeatable way.
+1. **Controller:** Deployed the Omada Software Controller in an **Ubuntu LXC container** on Proxmox, with a static IP (`10.0.0.3`) so it's always reachable for management.
+2. **Access point:** Installed an **Omada EAP245**, powered over Ethernet by the **TP-Link TL-SG1016PE** PoE switch.
 
-* **Challenge 2: Failed AP Adoption**
-    * **Problem:** The Omada controller wizard could not discover the EAP245, even though it was on the same network.
-    * **Solution:** I diagnosed that the AP was not in a factory-default state. I performed a **physical factory reset** (holding the reset pinhole for 15s), which forced the AP into "Pending Adoption" mode. The controller was then able to discover and adopt it immediately.
+```mermaid
+flowchart LR
+    SW["TL-SG1016PE<br/>PoE switch"] -->|"PoE + data"| EAP["Omada EAP245"]
+    CTRL["Omada Controller LXC<br/>10.0.0.3"] -.->|"discovers, adopts, manages"| EAP
+```
 
 ---
 
-### Outcome
+## Challenges & Solutions
 
-A fully functional, controller-managed Wi-Fi network. This system is now ready to be segmented into multiple SSIDs, each tagged with a different VLAN (e.g., `GUEST`, `IOT`, `LAB`) for advanced network security.
+### 1. Controller installation failed
+
+- **Problem:** Installing the controller by hand on Ubuntu 22.04 failed because of broken package dependencies (`mongodb`, `libssl1.1`).
+- **Fix:** Researched the problem and switched to a well-known community install script. It added the right repositories and dependencies automatically, which gave a clean, repeatable install.
+
+### 2. Access point would not adopt
+
+- **Problem:** The controller couldn't discover the EAP245, even though both were on the same network.
+- **Diagnosis:** The AP wasn't in a factory-default state, so it wasn't advertising itself for adoption.
+- **Fix:** Did a **physical factory reset** (held the reset pinhole for 15 seconds). The AP came back up in *Pending Adoption*, and the controller adopted it right away.
+
+---
+
+## Outcome
+
+A working, centrally managed Wi-Fi network. The controller and AP are ready for multiple SSIDs, each mapped to its own VLAN (for example guest, IoT, or lab).
+
+**Skills demonstrated:** LXC deployment · Linux dependency troubleshooting · PoE · AP adoption & lifecycle · controller-based management

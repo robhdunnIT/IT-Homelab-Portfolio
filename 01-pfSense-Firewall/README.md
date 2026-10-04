@@ -1,33 +1,51 @@
-# Project: Virtualized Enterprise Firewall (pfSense)
+# 01: Virtualized pfSense Firewall
 
-**Goal:** To replace my consumer-grade ISP router with a robust, high-performance, virtualized pfSense firewall. This created a secure, configurable network foundation for my entire lab.
+[← Back to portfolio](../README.md) · [Next: Omada Wi-Fi →](../02-Omada-Controller/README.md)
 
-**Core Technologies:** Proxmox VE, pfSense CE, PCI Passthrough, Intel i350-T2 NIC, Network Segmentation, System Tunables.
+> **Summary:** Replaced a consumer ISP router with a virtualized pfSense firewall on Proxmox, using a dedicated passthrough NIC. It's the routing, DHCP, and firewall foundation for every other project in this lab.
 
----
-
-### Process & Deployment
-
-1.  **Hardware Prep:** Installed a dual-port Intel i350-T2 NIC in my Proxmox server.
-2.  **Virtualization:** Created a new pfSense VM and used Proxmox's **PCI Passthrough** feature to give the VM exclusive, direct control over the NIC for maximum performance.
-3.  **Configuration:** Configured one port as **WAN** (to the modem) and the other as **LAN** (to my managed switch).
+**Technologies:** Proxmox VE · pfSense CE · PCI passthrough · Intel i350-T2 · subnetting · system tunables
 
 ---
 
-### Challenges & Solutions
+## Build
 
-This project was an excellent real-world troubleshooting exercise:
+1. **Hardware:** Installed a dual-port Intel i350-T2 NIC in the Proxmox server.
+2. **Virtualization:** Created a pfSense VM and used Proxmox **PCI passthrough** so the VM gets exclusive, direct control of the NIC, with no virtual switching in the data path.
+3. **Interfaces:** Assigned one port as **WAN** (to the ISP modem) and the other as **LAN** (to the managed switch).
 
-* **Challenge 1: IP Conflict (Double NAT)**
-    * **Problem:** The ISP modem was also a router, issuing a private IP (`192.168.x.x`) to my pfSense WAN port. This conflicted with the default pfSense LAN network (`192.168.1.1`).
-    * **Solution:** I re-architected my entire lab onto a new, non-conflicting RFC1918 subnet (`10.0.0.0/24`). This immediately resolved the conflict and properly isolated my lab from the main home network.
-
-* **Challenge 2: Performance Bottleneck (Slow Speed)**
-    * **Problem:** After installation, speed tests were capped at ~600Mbps, far below my gigabit plan.
-    * **Solution:** I diagnosed this as a **Hardware Offloading** conflict, a common issue with virtualized NICs. By adding `net.inet.tcp.tso=0` and `net.inet.tcp.lro=0` to the System Tunables, I disabled the problematic features at the driver level, which resolved the bottleneck and restored my full 900+ Mbps speeds.
+```mermaid
+flowchart LR
+    ISP["ISP modem"] -->|"WAN: i350 port 1"| PF["pfSense VM"]
+    PF -->|"LAN: i350 port 2<br/>10.0.0.0/24"| SW["TL-SG1016PE switch"]
+```
 
 ---
 
-### Outcome
+## Challenges & Solutions
 
-A stable, high-performance router running my entire network. This build is now the secure foundation for all future projects, such as creating isolated VLANs for security labs and implementing VPNs.
+### 1. Subnet conflict with the ISP router (double NAT)
+
+- **Problem:** The ISP modem is also a router, so it handed the pfSense WAN port a private `192.168.x.x` address. That overlapped with pfSense's default LAN network (`192.168.1.1`), so routing between the two broke.
+- **Fix:** Moved the whole lab to a non-overlapping RFC 1918 subnet, **`10.0.0.0/24`**. The conflict went away right away, and the lab now sits cleanly behind the home network as its own segment.
+
+### 2. Gigabit connection capped at ~600 Mbps
+
+- **Problem:** Speed tests topped out around 600 Mbps on a gigabit plan.
+- **Diagnosis:** Traced it to **hardware offloading** (TCP Segmentation Offload and Large Receive Offload), a common source of pfSense throughput problems, especially in virtualized setups.
+- **Fix:** Added these to **System → Advanced → System Tunables** to turn the features off at the driver level:
+
+  ```text
+  net.inet.tcp.tso = 0
+  net.inet.tcp.lro = 0
+  ```
+
+  Throughput went back to **900+ Mbps**.
+
+---
+
+## Outcome
+
+A stable, full-speed router and firewall for the whole lab. Later projects build on it: VLAN segmentation ([05](../05-Guest-Network-Isolation/README.md)) and DNS integration ([06](../06-Pi-hole-DNS/README.md)).
+
+**Skills demonstrated:** PCI passthrough · WAN/LAN design · RFC 1918 subnet planning · NAT · performance troubleshooting

@@ -1,34 +1,46 @@
-# Project: Virtual Active Directory (AD) Lab
+# 03: Active Directory Domain Lab
 
-**Goal:** To build a foundational enterprise environment using Active Directory. This project involved deploying a Windows Server 2022 Domain Controller and a Windows 11 Enterprise client, configuring them to communicate, and troubleshooting a complex domain-join failure.
+[← Previous: Omada Wi-Fi](../02-Omada-Controller/README.md) · [Back to portfolio](../README.md) · [Next: TrueNAS →](../04-TrueNAS-Storage/README.md)
 
-**Core Technologies:** Proxmox VE, Windows Server 2022, Windows 11 Enterprise, Active Directory Domain Services (AD DS), DNS, Group Policy.
+> **Summary:** Built a small enterprise environment with a Windows Server 2022 domain controller and a domain-joined Windows 11 Enterprise client, and worked through a multi-step domain-join failure.
 
----
-
-### Process & Deployment
-
-1.  **Server (DC01):** Deployed a Windows Server 2022 VM, assigned it a static IP, and installed the **AD DS** and **DNS Server** roles.
-2.  **Forest:** Promoted the server to a new domain controller, creating a new forest (e.g., `mylab.local`).
-3.  **Client (PC01):** Deployed a Windows 11 Enterprise VM, ensuring it met **UEFI, Secure Boot, and TPM 2.0** requirements within Proxmox.
+**Technologies:** Proxmox VE · Windows Server 2022 · Windows 11 Enterprise · AD DS · DNS · PowerShell · Group Policy
 
 ---
 
-### Challenges & Solutions
+## Build
 
-* **Challenge: Windows 11 VM Requirements**
-    * **Problem:** The Windows 11 installer blocked installation, requiring a virtual TPM 2.0 and Secure Boot.
-    * **Solution:** In Proxmox, I reconfigured the VM to use **OVMF (UEFI)**, then added a virtual **EFI Disk** (with Secure Boot enabled) and a virtual **TPM State 2.0** device. This satisfied the installer's requirements.
+1. **Domain controller (DC01):** Deployed a Windows Server 2022 VM with a static IP (`10.0.0.5`) and installed the **AD DS** and **DNS Server** roles.
+2. **Forest:** Promoted DC01 to a domain controller in a new forest (`robmox.lan`).
+3. **Client:** Deployed a Windows 11 Enterprise VM that meets the **UEFI, Secure Boot, and TPM 2.0** requirements inside Proxmox, then joined it to the domain.
 
-* **Challenge: Client Domain Join Failure ("NTLM authentication disabled")**
-    * **Problem:** The client PC failed to join the domain, citing an NTLM error. This indicated a Kerberos authentication failure.
-    * **Solution (Multi-Step):**
-        1.  **DNS Isolation:** I reconfigured the client's network adapter to use *only* the Domain Controller for DNS, preventing it from sending domain queries to the router.
-        2.  **Stale Account Removal:** On the Domain Controller, I used "Active Directory Users and Computers" to find and delete the stale computer account for `PC01`, which was corrupted from the first failed attempt.
-        3.  **Forced Disjoin & Re-Identity:** On the client, I used PowerShell (`Remove-Computer`) to forcibly remove the broken trust. I then **renamed the PC** to `W11-CLIENT-01` to ensure a 100% fresh identity before successfully re-joining the domain.
+```mermaid
+flowchart LR
+    CLIENT["W11-CLIENT-01<br/>Windows 11 Enterprise"] -->|"DNS: SRV / A lookups"| DC["DC01<br/>Windows Server 2022<br/>AD DS + DNS · 10.0.0.5"]
+    CLIENT -->|"Kerberos authentication<br/>domain join"| DC
+```
 
 ---
 
-### Outcome
+## Challenges & Solutions
 
-A fully functional Active Directory environment with a trusted Domain Controller (`DC01`) and a domain-joined client (`W11-CLIENT-01`). This lab is now the base for all future enterprise projects, such as testing Group Policy Objects (GPOs), managing user accounts, and deploying services.
+### 1. Windows 11 installer blocked the VM
+
+- **Problem:** The installer refused to continue without TPM 2.0 and Secure Boot.
+- **Fix:** Changed the VM firmware to **OVMF (UEFI)**, then added an **EFI disk** (Secure Boot keys enrolled) and a virtual **TPM 2.0 state** device. The installer accepted the VM.
+
+### 2. Domain join failed: "NTLM authentication disabled"
+
+- **Problem:** The client couldn't join the domain and returned an NTLM error. That pointed to Kerberos failing and Windows falling back to NTLM, so the client couldn't properly locate or authenticate against the DC.
+- **Fix (multi-step):**
+  1. **Fix client DNS:** Set the client's adapter to use **only the domain controller** for DNS, so domain lookups stopped going to the router, which can't resolve AD records.
+  2. **Remove the stale computer account:** In **Active Directory Users and Computers**, deleted the corrupted `PC01` computer object left by the first failed attempt.
+  3. **Force a clean identity:** On the client, used PowerShell (`Remove-Computer`) to force-remove the broken trust, then **renamed the PC to `W11-CLIENT-01`** so it would rejoin as a completely fresh object. After that, the domain join went through.
+
+---
+
+## Outcome
+
+A working Active Directory domain with a domain controller (`DC01`) and a domain-joined client (`W11-CLIENT-01`). It's the base for Group Policy, user/group management, and other enterprise services in the lab.
+
+**Skills demonstrated:** AD DS deployment · AD-integrated DNS · domain join troubleshooting · ADUC · PowerShell · Windows 11 virtual TPM / Secure Boot

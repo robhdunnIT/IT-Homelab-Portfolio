@@ -1,35 +1,50 @@
-# Project: Centralized DNS & Ad-Blocking (Pi-hole)
+# 06: Centralized DNS & Ad-Blocking with Pi-hole
 
-**Goal:** To implement network-wide ad blocking and tracking protection while integrating seamless DNS resolution for the local Active Directory domain and extending services to isolated network segments.
+[← Previous: Guest Network](../05-Guest-Network-Isolation/README.md) · [Back to portfolio](../README.md)
 
-**Core Technologies:** Pi-hole (v6 Beta), DNS, DHCP, Conditional Forwarding, Active Directory, Firewall Rules.
+> **Summary:** Set up network-wide ad and tracker blocking with Pi-hole, while keeping Active Directory name resolution working and extending DNS to the isolated guest VLAN.
 
----
-
-### Architecture
-
-1.  **Deployment:** Deployed Pi-hole in a lightweight Linux Container (LXC) on Proxmox.
-2.  **Network Integration:** Reconfigured the pfSense DHCP server to issue the Pi-hole's IP (`10.0.0.6`) as the primary DNS for all LAN clients.
-3.  **Split-Horizon DNS:** Configured Pi-hole to differentiate between public internet queries (forwarded to Google) and local intranet queries (forwarded to the Domain Controller).
+**Technologies:** Pi-hole v6 · LXC · DNS · DHCP · conditional forwarding · Active Directory · pfSense firewall rules
 
 ---
 
-### Challenges & Solutions
+## Architecture
 
-* **Challenge: Active Directory Integration**
-    * **Problem:** Standard Pi-hole setups forward all DNS queries to public upstreams. This breaks Active Directory functionality, as public servers cannot resolve local domain names like `dc01.robmox.lan`.
-    * **Solution:** Implemented **Conditional Forwarding** (Reverse Server lookup). I configured Pi-hole to identify queries for the `10.0.0.0/24` subnet or the `.lan` domain and forward those specific requests to the local Domain Controller (`10.0.0.5`) instead of the internet.
+1. **Deployment:** Deployed Pi-hole in a lightweight **LXC container** on Proxmox at `10.0.0.6`.
+2. **DHCP integration:** Configured the pfSense DHCP server to hand out Pi-hole as the primary DNS server for all LAN clients.
+3. **Split DNS:** Pi-hole sends public queries to an upstream resolver (Google) and sends local domain queries to the domain controller.
 
-* **Challenge: Pi-hole v6 Configuration**
-    * **Problem:** Utilizing the v6 Beta introduced a new, undocumented syntax for defining upstream servers.
-    * **Solution:** Researched and applied the correct syntax by explicitly defining the target port (`#53`), ensuring the internal parser correctly routed local traffic to the DC.
-
-* **Challenge: Cross-VLAN Service Access**
-    * **Problem:** The isolated "Guest" VLAN blocked all access to the main LAN, preventing guests from using the Pi-hole.
-    * **Solution:** Engineered a "pinhole" in the firewall policy. I created a specific Pass rule allowing DNS traffic (Port 53) to the Pi-hole IP *before* the "Block LAN" rule, and configured Pi-hole to accept queries from non-local subnets.
+```mermaid
+flowchart LR
+    C["LAN & guest clients"] -->|"all DNS queries"| PH["Pi-hole<br/>10.0.0.6"]
+    PH -->|"ads / trackers"| X["Blocked"]
+    PH -->|"robmox.lan &<br/>10.0.0.0/24 reverse"| DC["DC01<br/>10.0.0.5"]
+    PH -->|"everything else"| UP["Google DNS"]
+```
 
 ---
 
-### Outcome
+## Challenges & Solutions
 
-A cleaner, faster network with blocked telemetry and advertisements for all devices (including guests), maintaining full compatibility with local enterprise services.
+### 1. Pi-hole broke Active Directory name resolution
+
+- **Problem:** By default, Pi-hole sends every query to public upstream servers. Public DNS can't resolve internal names like `dc01.robmox.lan`, so AD lookups failed.
+- **Fix:** Set up **conditional forwarding** (Pi-hole's reverse-server setting). Queries for the `robmox.lan` domain and reverse lookups for `10.0.0.0/24` now go to the domain controller (`10.0.0.5`) instead of the internet.
+
+### 2. New Pi-hole v6 configuration syntax
+
+- **Problem:** I deployed Pi-hole v6 while it was still in beta, and it used a new, poorly documented syntax for upstream and conditional-forwarding servers.
+- **Fix:** Researched the new format and defined the DC target with an explicit port (`10.0.0.5#53`), so Pi-hole correctly sends local queries to the DC.
+
+### 3. Guest VLAN couldn't reach Pi-hole
+
+- **Problem:** The guest VLAN's **Block LAN** rule ([05](../05-Guest-Network-Isolation/README.md)) also blocked guests from reaching Pi-hole on the LAN.
+- **Fix:** Added a narrow **pinhole**: a pass rule for **DNS (port 53) to `10.0.0.6` only**, placed **above** the Block LAN rule. I also set Pi-hole to accept queries from non-local subnets. Guests get filtered DNS and still can't reach anything else on the LAN.
+
+---
+
+## Outcome
+
+Faster, cleaner browsing with ads and telemetry blocked for every device, guests included, and full compatibility with Active Directory.
+
+**Skills demonstrated:** DNS architecture · conditional forwarding · AD DNS integration · DHCP options · least-privilege firewall pinholes · working from limited documentation
